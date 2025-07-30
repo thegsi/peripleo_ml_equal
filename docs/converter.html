@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Equal Earth Projection Converter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .input-section, .output-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 350px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+            border: 2px solid #bdc3c7;
+        }
+
+        .btn-secondary:hover {
+            background: #d5dbdb;
+            transform: translateY(-1px);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .file-input-label:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-1px);
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #e8f4f8, #d1ecf1);
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .info-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .info-panel ul {
+            color: #34495e;
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .coordinates-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            textarea {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 GeoJSON Equal Earth Converter</h1>
+            <p>Transform your GeoJSON data to display correctly in Equal Earth projection maps</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="section-title">📥 Input GeoJSON (WGS84)</div>
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".geojson,.json">
+                    <label for="fileInput" class="file-input-label">📁 Load GeoJSON File</label>
+                </div>
+
+                <textarea id="inputGeoJSON" placeholder='Paste your GeoJSON here or load from file...
+
+Example:
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.006, 40.7128]
+      },
+      "properties": {
+        "name": "New York City"
+      }
+    }
+  ]
+}'></textarea>
+
+                <div class="info-panel">
+                    <h3>🎯 How it works:</h3>
+                    <ul>
+                        <li>Input GeoJSON should be in standard WGS84 coordinates (longitude, latitude)</li>
+                        <li>The tool reprojects coordinates to Equal Earth projection (EPSG:8857)</li>
+                        <li>Use the converted GeoJSON with MapLibre and Equal Earth tiles</li>
+                        <li>Compatible with bbox.earth Equal Earth web mapping</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <div class="section-title">📤 Output GeoJSON (Equal Earth)</div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="convertGeoJSON()">🔄 Convert to Equal Earth</button>
+                    <button class="btn btn-secondary" onclick="downloadResult()">💾 Download</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard()">📋 Copy</button>
+                </div>
+
+                <div id="status"></div>
+
+                <textarea id="outputGeoJSON" placeholder="Converted GeoJSON will appear here..." readonly></textarea>
+
+                <div id="coordinatesInfo" class="coordinates-display" style="display: none;">
+                    <strong>Coordinate Transformation Examples:</strong>
+                    <div id="transformExamples"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Equal Earth projection formulas
+        // Based on Šavrič, Bojan; Jenny, Bernhard; Patterson, Tom (2019)
+        const A1 = 1.340264;
+        const A2 = -0.081106;
+        const A3 = 0.000893;
+        const A4 = 0.003796;
+        const M = Math.sqrt(3) / 2;
+
+        function degToRad(deg) {
+            return deg * Math.PI / 180;
+        }
+
+        function radToDeg(rad) {
+            return rad * 180 / Math.PI;
+        }
+
+        // Forward projection: WGS84 (lon, lat) to Equal Earth (x, y)
+        function projectToEqualEarth(lon, lat) {
+            const lambda = degToRad(lon);
+            const phi = degToRad(lat);
+            
+            const theta = Math.asin(M * Math.sin(phi));
+            const theta2 = theta * theta;
+            const theta6 = theta2 * theta2 * theta2;
+            
+            const x = lambda * Math.cos(theta) / (M * (A1 + 3 * A2 * theta2 + theta6 * (7 * A3 + 9 * A4 * theta2)));
+            const y = theta * (A1 + A2 * theta2 + theta6 * (A3 + A4 * theta2));
+            
+            // Convert to meters (Earth's radius ≈ 6371000m)
+            const R = 6371000;
+            return [x * R, y * R];
+        }
+
+        // Process coordinates recursively
+        function transformCoordinates(coords, depth = 0) {
+            if (depth === 0) {
+                // Single coordinate pair [lon, lat]
+                return projectToEqualEarth(coords[0], coords[1]);
+            } else {
+                // Array of coordinates
+                return coords.map(coord => transformCoordinates(coord, depth - 1));
+            }
+        }
+
+        // Transform geometry
+        function transformGeometry(geometry) {
+            if (!geometry || !geometry.coordinates) return geometry;
+            
+            const newGeometry = { ...geometry };
+            
+            switch (geometry.type) {
+                case 'Point':
+                    newGeometry.coordinates = transformCoordinates(geometry.coordinates, 0);
+                    break;
+                case 'LineString':
+                case 'MultiPoint':
+                    newGeometry.coordinates = transformCoordinates(geometry.coordinates, 1);
+                    break;
+                case 'Polygon':
+                case 'MultiLineString':
+                    newGeometry.coordinates = transformCoordinates(geometry.coordinates, 2);
+                    break;
+                case 'MultiPolygon':
+                    newGeometry.coordinates = transformCoordinates(geometry.coordinates, 3);
+                    break;
+                case 'GeometryCollection':
+                    newGeometry.geometries = geometry.geometries.map(transformGeometry);
+                    break;
+            }
+            
+            return newGeometry;
+        }
+
+        // Main conversion function
+        function convertGeoJSON() {
+            const input = document.getElementById('inputGeoJSON').value.trim();
+            const statusDiv = document.getElementById('status');
+            const output = document.getElementById('outputGeoJSON');
+            const coordsInfo = document.getElementById('coordinatesInfo');
+            const examples = document.getElementById('transformExamples');
+            
+            if (!input) {
+                showStatus('Please provide GeoJSON input', 'error');
+                return;
+            }
+            
+            try {
+                const geoJSON = JSON.parse(input);
+                
+                if (!geoJSON.type) {
+                    throw new Error('Invalid GeoJSON: missing type property');
+                }
+                
+                let transformedGeoJSON;
+                const transformExamples = [];
+                
+                if (geoJSON.type === 'FeatureCollection') {
+                    transformedGeoJSON = {
+                        ...geoJSON,
+                        features: geoJSON.features.map(feature => {
+                            if (feature.geometry) {
+                                // Store example transformation
+                                if (feature.geometry.type === 'Point' && transformExamples.length < 3) {
+                                    const original = feature.geometry.coordinates;
+                                    const transformed = projectToEqualEarth(original[0], original[1]);
+                                    transformExamples.push({
+                                        original: original,
+                                        transformed: transformed,
+                                        name: feature.properties?.name || `Point ${transformExamples.length + 1}`
+                                    });
+                                }
+                                
+                                return {
+                                    ...feature,
+                                    geometry: transformGeometry(feature.geometry)
+                                };
+                            }
+                            return feature;
+                        })
+                    };
+                } else if (geoJSON.type === 'Feature') {
+                    if (geoJSON.geometry?.type === 'Point') {
+                        const original = geoJSON.geometry.coordinates;
+                        const transformed = projectToEqualEarth(original[0], original[1]);
+                        transformExamples.push({
+                            original: original,
+                            transformed: transformed,
+                            name: geoJSON.properties?.name || 'Feature'
+                        });
+                    }
+                    
+                    transformedGeoJSON = {
+                        ...geoJSON,
+                        geometry: transformGeometry(geoJSON.geometry)
+                    };
+                } else {
+                    // Direct geometry
+                    transformedGeoJSON = transformGeometry(geoJSON);
+                }
+                
+                // Add CRS information
+                transformedGeoJSON.crs = {
+                    type: "name",
+                    properties: {
+                        name: "EPSG:8857"
+                    }
+                };
+                
+                output.value = JSON.stringify(transformedGeoJSON, null, 2);
+                showStatus('✅ Successfully converted to Equal Earth projection!', 'success');
+                
+                // Show transformation examples
+                if (transformExamples.length > 0) {
+                    coordsInfo.style.display = 'block';
+                    examples.innerHTML = transformExamples.map(ex => 
+                        `<div style="margin: 5px 0;">
+                            <strong>${ex.name}:</strong><br>
+                            WGS84: [${ex.original[0].toFixed(6)}, ${ex.original[1].toFixed(6)}]<br>
+                            Equal Earth: [${ex.transformed[0].toFixed(2)}, ${ex.transformed[1].toFixed(2)}]
+                        </div>`
+                    ).join('');
+                } else {
+                    coordsInfo.style.display = 'none';
+                }
+                
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                output.value = '';
+                coordsInfo.style.display = 'none';
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status';
+            }, 5000);
+        }
+        
+        function downloadResult() {
+            const output = document.getElementById('outputGeoJSON').value;
+            if (!output.trim()) {
+                showStatus('No converted data to download', 'error');
+                return;
+            }
+            
+            const blob = new Blob([output], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'converted_equal_earth.geojson';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('📁 File downloaded successfully!', 'success');
+        }
+        
+        function copyToClipboard() {
+            const output = document.getElementById('outputGeoJSON');
+            if (!output.value.trim()) {
+                showStatus('No converted data to copy', 'error');
+                return;
+            }
+            
+            output.select();
+            document.execCommand('copy');
+            showStatus('📋 Copied to clipboard!', 'success');
+        }
+        
+        // File input handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('inputGeoJSON').value = e.target.result;
+                showStatus('📄 File loaded successfully!', 'success');
+            };
+            reader.readAsText(file);
+        });
+        
+        // Allow drag and drop
+        const inputArea = document.getElementById('inputGeoJSON');
+        
+        inputArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            inputArea.style.borderColor = '#667eea';
+            inputArea.style.backgroundColor = '#f0f4ff';
+        });
+        
+        inputArea.addEventListener('dragleave', function(e) {
+            inputArea.style.borderColor = '#e0e0e0';
+            inputArea.style.backgroundColor = '#fafafa';
+        });
+        
+        inputArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            inputArea.style.borderColor = '#e0e0e0';
+            inputArea.style.backgroundColor = '#fafafa';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    inputArea.value = e.target.result;
+                    showStatus('📄 File loaded via drag & drop!', 'success');
+                };
+                reader.readAsText(file);
+            }
+        });
+    </script>
+</body>
+</html>
