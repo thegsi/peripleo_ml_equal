@@ -1,0 +1,64 @@
+{
+  "version": 8,
+  "name": "Plain Equal Earth Basemap",
+  "glyphs": "https://equal.bbox.earth/fonts/{fontstack}/{range}.pbf",
+  "sprite": "https://equal.bbox.earth/sprites/sprite",
+  "metadata": {
+    "maplibre:plugin:maplibre-gl-equal-earth": {
+      "version": "1.0.0"
+    }
+  },
+  "center": [0, 0],
+  "zoom": 1.2,
+  "sources": {
+    "protomaps": {
+      "type": "vector",
+      "tiles": [
+        "https://tiles.basemaps.cartocdn.com/vector/basemap-lite/{z}/{x}/{y}.mvt"
+      ],
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "© OpenStreetMap contributors, Protomaps"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#cce5f0"
+      }
+    },
+    {
+      "id": "land",
+      "type": "fill",
+      "source": "protomaps",
+      "source-layer": "land",
+      "paint": {
+        "fill-color": "#f0efe9"
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "protomaps",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#cce5f0"
+      }
+    },
+    {
+      "id": "graticule",
+      "type": "line",
+      "source": "protomaps",
+      "source-layer": "graticule",
+      "paint": {
+        "line-color": "#bcd",
+        "line-width": 0.5
+      },
+      "layout": {
+        "visibility": "none"
+      }
+    }
+  ]
+}
